@@ -18,6 +18,37 @@ var file = require('gulp-file');
 var fs = require("fs");
 var favicons = require("gulp-favicons");
 
+var browserify = require('browserify');
+var source = require('vinyl-source-stream');
+var buffer = require('vinyl-buffer');
+var uglify = require('gulp-uglify');
+var sourcemaps = require('gulp-sourcemaps');
+var gutil = require('gulp-util');
+var debowerify = require('debowerify');
+
+gulp.task('javascript', function () {
+  // set up the browserify instance on a task basis
+  var b = browserify({
+    entries: './assets/scripts/bundle.js',
+    debug: true
+  });
+
+  return b.transform(debowerify)    // add this line
+  	.bundle()
+    .pipe(source('application.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({loadMaps: true}))
+        // Add transformation tasks to the pipeline here.
+        // .pipe(uglify())
+        // .on('error', gutil.log)
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest('./assets/dist/js/'));
+});
+
+gulp.task('watch:javascript', function() {
+	gulp.watch("./assets/scripts/bundle.js", ['javascript']);
+});
+
 /**
  * Bower
  */
@@ -134,23 +165,36 @@ gulp.task('javascripts', function(){
 });
 
 /**
- * Copy jquery and modernizr to be native
+ * Copy jquery, router and modernizr to be native
  */
 
-gulp.task('copy', ['copy-modernizr', 'copy-jquery']);
+gulp.task('copy', ['copy-modernizr', 'copy-jquery', 'copy-plugins']);
 
 gulp.task('copy-modernizr', function(){
 	return gulp.src('bower_components/modernizr/modernizr.js')	// Gets Modernizr
-	.pipe(uglify())																				// Uglify(minify)
-	.pipe(rename({suffix: '.min'}))									// Rename it
-	.pipe(gulp.dest('assets/dist/js/'))							// Set destination to assets/js
+	.pipe(gulp.dest('assets/scripts/app/'))							// Set destination to assets/js
 	.pipe(notify('Modernizr copied'));					// Output to notification
 });
 
 gulp.task('copy-jquery', function(){
-	return gulp.src('bower_components/jquery/dist/jquery.min.js')				// Gets Jquery
+	return gulp.src('bower_components/jquery/dist/jquery.js')				// Gets Jquery
 	.pipe(gulp.dest('assets/dist/js/'))									// Set destination to assets/js
 	.pipe(notify('jQuery copied'));											// Output to notification
+});
+
+gulp.task('copy-plugins', function(){
+
+	var plugins = [
+		'bower_components/jquery-dom-router/dist/jquery.dom-router.js'
+	];
+
+	for (var i = 0; i < plugins.length; i++) {
+		var plugin = plugins[i];
+
+		gulp.src(plugin)
+			.pipe(gulp.dest('assets/scripts/app/plugins/'));
+	};
+
 });
 
 /**

@@ -1,0 +1,1 @@
+var maps = require('./components/maps');
